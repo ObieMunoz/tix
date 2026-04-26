@@ -21,8 +21,8 @@
 - [x] 2.1a `tix uninstall` — remove managed shims + unset hooksPath (`--purge`, `--dry-run`)
 - [x] 2.2 `tix doctor` — diagnostic checks
 - [x] 2.3 `tix show` — current branch/ticket/protected/base/sources
-- [ ] 2.4 `tix config get|set|list` — read/write config (e.g., `default_base`, `protected`)
-- [ ] **Checkpoint C:** install + configure + introspect works on fresh env
+- [x] 2.4 `tix config get|set|list` — read/write config (e.g., `default_base`, `protected`)
+- [x] **Checkpoint C:** install + configure + introspect works on fresh env
 
 ## Phase 3: Ticket workflow
 - [ ] 3.1 `tix set-ticket <TICKET>` (no amend yet)

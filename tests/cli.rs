@@ -1,4 +1,5 @@
 use assert_cmd::Command;
+use tempfile::{NamedTempFile, TempDir};
 
 const SUBCOMMANDS: &[&str] = &[
     "init",
@@ -15,13 +16,36 @@ const SUBCOMMANDS: &[&str] = &[
     "hook",
 ];
 
+/// All cli.rs tests run with HOME / XDG_CONFIG_HOME / GIT_CONFIG_GLOBAL
+/// pointed at scratch temp paths. The isolation is defensive: if an
+/// implemented command (which writes to filesystem or git config)
+/// accidentally lands in a "stub" assertion, it writes to a TempDir
+/// that gets cleaned up on Drop instead of polluting the host machine.
+struct IsolatedEnv {
+    _scratch: TempDir,
+    _git_global: NamedTempFile,
+}
+
+fn isolated() -> (Command, IsolatedEnv) {
+    let scratch = tempfile::tempdir().unwrap();
+    let git_global = NamedTempFile::new().unwrap();
+    let mut cmd = Command::cargo_bin("tix").unwrap();
+    cmd.env("HOME", scratch.path())
+        .env("XDG_CONFIG_HOME", scratch.path())
+        .env("GIT_CONFIG_GLOBAL", git_global.path());
+    (
+        cmd,
+        IsolatedEnv {
+            _scratch: scratch,
+            _git_global: git_global,
+        },
+    )
+}
+
 #[test]
 fn top_level_help_lists_every_subcommand() {
-    let assert = Command::cargo_bin("tix")
-        .unwrap()
-        .arg("--help")
-        .assert()
-        .success();
+    let (mut cmd, _env) = isolated();
+    let assert = cmd.arg("--help").assert().success();
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
     for sub in SUBCOMMANDS {
         assert!(
@@ -34,21 +58,15 @@ fn top_level_help_lists_every_subcommand() {
 #[test]
 fn each_subcommand_has_its_own_help() {
     for sub in SUBCOMMANDS {
-        Command::cargo_bin("tix")
-            .unwrap()
-            .args([sub, "--help"])
-            .assert()
-            .success();
+        let (mut cmd, _env) = isolated();
+        cmd.args([sub, "--help"]).assert().success();
     }
 }
 
 #[test]
 fn unknown_subcommand_errors_cleanly() {
-    let assert = Command::cargo_bin("tix")
-        .unwrap()
-        .arg("nonsense")
-        .assert()
-        .failure();
+    let (mut cmd, _env) = isolated();
+    let assert = cmd.arg("nonsense").assert().failure();
     let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
     assert!(
         stderr.contains("unrecognized") || stderr.contains("error:"),
@@ -58,27 +76,22 @@ fn unknown_subcommand_errors_cleanly() {
 
 #[test]
 fn every_stub_exits_nonzero_with_not_yet_implemented() {
-    // Implemented commands are intentionally absent from this list — they
-    // have side effects (or run real checks against the host env). Each
-    // must be exercised in its own env-isolated test file.
-    //   IMPLEMENTED: init, uninstall, doctor, show
+    // Implemented commands are deliberately absent from this list — they
+    // are exercised under fully env-isolated tests in their own files.
+    //   IMPLEMENTED: init, uninstall, doctor, show, config
     let cases: &[&[&str]] = &[
         &["start", "POD-1"],
         &["set-ticket", "POD-1"],
         &["clear-ticket"],
         &["protect", "main"],
         &["unprotect", "main"],
-        &["config", "get", "branches.default_base"],
         &["pr"],
         &["ticket"],
         &["hook", "prepare-commit-msg"],
     ];
     for args in cases {
-        let assert = Command::cargo_bin("tix")
-            .unwrap()
-            .args(*args)
-            .assert()
-            .failure();
+        let (mut cmd, _env) = isolated();
+        let assert = cmd.args(*args).assert().failure();
         let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
         assert!(
             stderr.contains("not yet implemented"),
@@ -89,8 +102,8 @@ fn every_stub_exits_nonzero_with_not_yet_implemented() {
 
 #[test]
 fn start_accepts_ticket_description_and_base() {
-    let assert = Command::cargo_bin("tix")
-        .unwrap()
+    let (mut cmd, _env) = isolated();
+    let assert = cmd
         .args(["start", "POD-1234", "fix-thing", "--base", "develop"])
         .assert()
         .failure();
@@ -100,25 +113,8 @@ fn start_accepts_ticket_description_and_base() {
 
 #[test]
 fn start_accepts_flag_before_positional() {
-    Command::cargo_bin("tix")
-        .unwrap()
-        .args(["start", "POD-1234", "--base", "develop", "fix-thing"])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
-}
-
-#[test]
-fn config_set_accepts_scope_flag_and_value() {
-    Command::cargo_bin("tix")
-        .unwrap()
-        .args([
-            "config",
-            "set",
-            "branches.default_base",
-            "develop",
-            "--global",
-        ])
+    let (mut cmd, _env) = isolated();
+    cmd.args(["start", "POD-1234", "--base", "develop", "fix-thing"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("not yet implemented"));
@@ -126,16 +122,14 @@ fn config_set_accepts_scope_flag_and_value() {
 
 #[test]
 fn protect_accepts_global_or_repo_but_not_both() {
-    Command::cargo_bin("tix")
-        .unwrap()
-        .args(["protect", "main", "--global"])
+    let (mut cmd, _env) = isolated();
+    cmd.args(["protect", "main", "--global"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("not yet implemented"));
 
-    Command::cargo_bin("tix")
-        .unwrap()
-        .args(["protect", "main", "--global", "--repo"])
+    let (mut cmd2, _env2) = isolated();
+    cmd2.args(["protect", "main", "--global", "--repo"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("error:"));
@@ -143,9 +137,8 @@ fn protect_accepts_global_or_repo_but_not_both() {
 
 #[test]
 fn ticket_open_subcommand_parses() {
-    Command::cargo_bin("tix")
-        .unwrap()
-        .args(["ticket", "open"])
+    let (mut cmd, _env) = isolated();
+    cmd.args(["ticket", "open"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("not yet implemented"));
@@ -153,16 +146,15 @@ fn ticket_open_subcommand_parses() {
 
 #[test]
 fn hook_accepts_trailing_args_including_dashes() {
-    Command::cargo_bin("tix")
-        .unwrap()
-        .args([
-            "hook",
-            "prepare-commit-msg",
-            "/tmp/COMMIT_EDITMSG",
-            "message",
-            "--some-arg",
-        ])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+    let (mut cmd, _env) = isolated();
+    cmd.args([
+        "hook",
+        "prepare-commit-msg",
+        "/tmp/COMMIT_EDITMSG",
+        "message",
+        "--some-arg",
+    ])
+    .assert()
+    .failure()
+    .stderr(predicates::str::contains("not yet implemented"));
 }

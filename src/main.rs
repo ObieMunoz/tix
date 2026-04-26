@@ -2,7 +2,7 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use tix_git::cli::{Cli, Command, ConfigAction, TicketAction};
-use tix_git::commands::{doctor, handle, init, show, stub, uninstall};
+use tix_git::commands::{config_cmd, doctor, handle, init, show, stub, uninstall};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -16,9 +16,24 @@ fn main() -> ExitCode {
         Command::Protect { .. } => stub("protect"),
         Command::Unprotect { .. } => stub("unprotect"),
         Command::Config { action } => match action {
-            ConfigAction::Get { .. } => stub("config get"),
-            ConfigAction::Set { .. } => stub("config set"),
-            ConfigAction::List { .. } => stub("config list"),
+            ConfigAction::Get { key } => handle(config_cmd::get(&key)),
+            ConfigAction::Set {
+                key,
+                value,
+                scope,
+                append,
+                remove,
+            } => handle(config_cmd::set(&key, value, scope, append, remove)),
+            ConfigAction::List { global, repo, .. } => {
+                let scope = if global {
+                    config_cmd::ListScope::Global
+                } else if repo {
+                    config_cmd::ListScope::Repo
+                } else {
+                    config_cmd::ListScope::All
+                };
+                handle(config_cmd::list(scope))
+            }
         },
         Command::Doctor { verbose } => match doctor::run(verbose) {
             Ok(code) => code,
