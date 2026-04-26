@@ -153,6 +153,26 @@ cargo fmt
 
 Tests are end-to-end where possible: each integration test spins up a temp `$HOME`, `$XDG_CONFIG_HOME`, `GIT_CONFIG_GLOBAL`, and a fresh git repo (sometimes with a bare-repo origin). Hook tests exercise the shim → tix → hook → message-rewrite chain via real `git commit` / `git push` with the cargo-built binary on `PATH`.
 
+### Hacking on tix while tix is installed
+
+The repo ships its own `.tix.toml` that turns off branch protection and naming enforcement for this repo only:
+
+```toml
+[branches]
+protected = []
+naming_enforcement = "off"
+```
+
+Without it, the maintainer (and any contributor with `tix` installed) couldn't commit to `main` or push release tags without `--no-verify` — the very tool would fight its own dev workflow. Global defaults still apply to every other repo on your machine.
+
+On a **fresh clone**, the per-clone state in `.git/tix/state.json` doesn't exist yet, so the first `git commit` on `main` will prompt for a ticket. Run this once and the prompt won't return:
+
+```sh
+tix clear-ticket
+```
+
+This puts `main` into "no-ticket mode" for your clone — the entry persists, so subsequent commits skip the prompt. (Per-clone state is intentionally not committed; each contributor decides their own ticket-vs-no-ticket choice.)
+
 ## Notes on the SPEC
 
 Two deliberate deviations from `SPEC.md`, documented in commits:
