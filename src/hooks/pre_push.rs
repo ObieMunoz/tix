@@ -106,7 +106,13 @@ fn pushed_branches<R: Read>(reader: R) -> Result<Vec<String>> {
         if local_sha.chars().all(|c| c == '0') {
             continue;
         }
-        let local_branch = local_ref.strip_prefix("refs/heads/").unwrap_or(local_ref);
+        // Only branch refs participate in branch-naming and
+        // branch-protection checks. Tag refs (refs/tags/*) and other
+        // ref types are forwarded by git via the same pre-push protocol
+        // but should not be treated as branches.
+        let Some(local_branch) = local_ref.strip_prefix("refs/heads/") else {
+            continue;
+        };
         out.push(local_branch.to_string());
     }
     Ok(out)
@@ -182,6 +188,31 @@ mod tests {
     #[test]
     fn ignores_short_lines() {
         let line = "incomplete line\n";
+        let v = check_lines(line.as_bytes(), &protected()).unwrap();
+        assert!(v.is_empty());
+    }
+
+    #[test]
+    fn tag_refs_are_skipped_for_branch_checks() {
+        // Pushing `refs/tags/v0.1.1` must not be treated as a branch
+        // — branch naming and branch protection don't apply to tags.
+        let line = "refs/tags/v0.1.1 aaaa refs/tags/v0.1.1 bbbb\n";
+        let v = check_lines(line.as_bytes(), &protected()).unwrap();
+        assert!(v.is_empty(), "tag refs should not match branch protection");
+    }
+
+    #[test]
+    fn mixed_branch_and_tag_only_returns_branch() {
+        let input = "refs/tags/v1.0 aaaa refs/tags/v1.0 bbbb\n\
+                     refs/heads/main cccc refs/heads/main dddd\n";
+        let v = check_lines(input.as_bytes(), &protected()).unwrap();
+        assert_eq!(v.len(), 1);
+        assert_eq!(v[0].0, "main");
+    }
+
+    #[test]
+    fn refs_notes_and_other_namespaces_are_ignored() {
+        let line = "refs/notes/commits aaaa refs/notes/commits bbbb\n";
         let v = check_lines(line.as_bytes(), &protected()).unwrap();
         assert!(v.is_empty());
     }

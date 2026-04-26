@@ -277,6 +277,53 @@ fn stale_base_warning_fires_when_branch_is_far_behind() {
 }
 
 #[test]
+fn pushing_a_tag_does_not_emit_branch_naming_warning() {
+    let env = Env::new();
+    env.run_tix(&["init"]).success();
+    // Make a commit + tag on a feature branch, then push the tag.
+    env.git(&["checkout", "-b", "feature/setup"]);
+    env.git(&[
+        "commit",
+        "--no-verify",
+        "--allow-empty",
+        "-m",
+        "POD-1 setup",
+    ]);
+    env.git(&["tag", "-a", "v9.9.9", "-m", "test tag"]);
+
+    let tix_path = assert_cmd::cargo::cargo_bin("tix");
+    let tix_dir = tix_path.parent().unwrap();
+    let path = format!(
+        "{}:{}",
+        tix_dir.display(),
+        std::env::var("PATH").unwrap_or_default()
+    );
+    let out = ProcCommand::new("git")
+        .current_dir(env.repo.path())
+        .env("HOME", env.home.path())
+        .env("XDG_CONFIG_HOME", env.xdg.path())
+        .env("GIT_CONFIG_GLOBAL", env.git_global.path())
+        .env("PATH", &path)
+        .args(["push", "origin", "v9.9.9"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "tag push should succeed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("naming pattern"),
+        "tag push must not trigger branch-naming warning: {stderr}"
+    );
+    assert!(
+        !stderr.contains("protected"),
+        "tag push must not trigger branch-protection error: {stderr}"
+    );
+}
+
+#[test]
 fn nonexistent_repo_root_does_not_crash_pre_push_hook() {
     // Run pre-push hook outside any git repo (no remote refs/branches),
     // confirm it exits 0 cleanly.
