@@ -61,12 +61,11 @@ fn every_stub_exits_nonzero_with_not_yet_implemented() {
     // Implemented commands are intentionally absent from this list — they
     // have side effects (or run real checks against the host env). Each
     // must be exercised in its own env-isolated test file.
-    //   IMPLEMENTED: init, uninstall, doctor
+    //   IMPLEMENTED: init, uninstall, doctor, show
     let cases: &[&[&str]] = &[
         &["start", "POD-1"],
         &["set-ticket", "POD-1"],
         &["clear-ticket"],
-        &["show"],
         &["protect", "main"],
         &["unprotect", "main"],
         &["config", "get", "branches.default_base"],

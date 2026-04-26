@@ -2,6 +2,7 @@ use std::process::ExitCode;
 
 pub mod doctor;
 pub mod init;
+pub mod show;
 pub mod uninstall;
 
 pub fn stub(name: &str) -> ExitCode {
