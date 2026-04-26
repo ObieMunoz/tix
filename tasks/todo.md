@@ -12,7 +12,7 @@
 - [x] 1.1 Config system (defaults + global + repo merge, source tracking)
 - [x] 1.2 State system (`.git/tix/state.json`, atomic writes, versioned)
 - [x] 1.3 Git subprocess wrapper (`repo_root`, `current_branch`, `fetch`, `rev_list_count`, etc.)
-- [ ] 1.4 Utilities (ticket validate/extract, slugify, glob, prompt)
+- [x] 1.4 Utilities (ticket validate/extract, slugify, glob, prompt)
 - [ ] 1.5 CLI scaffold (clap, all 11 subcommands as stubs)
 - [ ] **Checkpoint B:** all unit + integration tests pass; clippy/fmt clean
 
