@@ -29,12 +29,20 @@ impl Env {
     }
 
     fn run_init(&self, args: &[&str]) -> assert_cmd::assert::Assert {
+        self.run("init", args)
+    }
+
+    fn run_uninstall(&self, args: &[&str]) -> assert_cmd::assert::Assert {
+        self.run("uninstall", args)
+    }
+
+    fn run(&self, sub: &str, args: &[&str]) -> assert_cmd::assert::Assert {
         Command::cargo_bin("tix")
             .unwrap()
             .env("HOME", self.home.path())
             .env("XDG_CONFIG_HOME", self.xdg.path())
             .env("GIT_CONFIG_GLOBAL", self.git_global.path())
-            .arg("init")
+            .arg(sub)
             .args(args)
             .assert()
     }
@@ -146,6 +154,95 @@ fn init_dry_run_writes_nothing() {
     assert!(!env.hooks_dir().exists());
     assert!(!env.config_file().exists());
     assert!(env.read_global_config().is_empty());
+}
+
+#[test]
+fn uninstall_after_init_removes_hooks_and_unsets_hookspath() {
+    let env = Env::new();
+    env.run_init(&[]).success();
+    assert!(env.hooks_dir().join("prepare-commit-msg").exists());
+    assert!(env.read_global_config().contains("hooksPath"));
+
+    env.run_uninstall(&[]).success();
+
+    for hook in ["prepare-commit-msg", "pre-commit", "pre-push"] {
+        assert!(
+            !env.hooks_dir().join(hook).exists(),
+            "hook should be removed: {hook}"
+        );
+    }
+    assert!(
+        !env.hooks_dir().exists(),
+        "hooks dir should be empty + removed"
+    );
+    assert!(
+        env.config_file().exists(),
+        "config.toml should be preserved without --purge"
+    );
+    assert!(
+        !env.read_global_config().contains("hooksPath"),
+        "core.hooksPath should be unset"
+    );
+}
+
+#[test]
+fn uninstall_purge_also_removes_config_toml_and_dir() {
+    let env = Env::new();
+    env.run_init(&[]).success();
+    env.run_uninstall(&["--purge"]).success();
+
+    assert!(!env.config_file().exists(), "config.toml should be gone");
+    assert!(
+        !env.xdg.path().join("tix").exists(),
+        "tix config dir should be gone"
+    );
+}
+
+#[test]
+fn uninstall_on_clean_machine_is_a_clean_no_op() {
+    let env = Env::new();
+    let assert = env.run_uninstall(&[]).success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(stdout.contains("nothing to do"), "stdout: {stdout}");
+}
+
+#[test]
+fn uninstall_leaves_other_users_hookspath_alone() {
+    let env = Env::new();
+    env.preset_hooks_path("/tmp/elsewhere");
+    let assert = env.run_uninstall(&[]).success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(stdout.contains("/tmp/elsewhere"), "stdout: {stdout}");
+    assert!(
+        env.read_global_config().contains("/tmp/elsewhere"),
+        "must not unset another tool's hooksPath"
+    );
+}
+
+#[test]
+fn uninstall_dry_run_makes_no_changes() {
+    let env = Env::new();
+    env.run_init(&[]).success();
+
+    let global_before = env.read_global_config();
+    let assert = env.run_uninstall(&["--dry-run"]).success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(stdout.contains("dry run"), "stdout: {stdout}");
+
+    assert!(env.hooks_dir().join("prepare-commit-msg").exists());
+    assert_eq!(env.read_global_config(), global_before);
+}
+
+#[test]
+fn uninstall_preserves_unrelated_files_in_hooks_dir() {
+    let env = Env::new();
+    env.run_init(&[]).success();
+    let custom = env.hooks_dir().join("custom-hook");
+    std::fs::write(&custom, "#!/bin/sh\necho custom\n").unwrap();
+
+    env.run_uninstall(&[]).success();
+    assert!(custom.exists(), "user-added file must be preserved");
+    assert!(env.hooks_dir().exists(), "hooks dir kept since not empty");
 }
 
 #[test]

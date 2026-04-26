@@ -2,12 +2,13 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use tix_git::cli::{Cli, Command, ConfigAction, TicketAction};
-use tix_git::commands::{handle, init, stub};
+use tix_git::commands::{handle, init, stub, uninstall};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
     match cli.command {
         Command::Init { dry_run, force } => handle(init::run(dry_run, force)),
+        Command::Uninstall { dry_run, purge } => handle(uninstall::run(dry_run, purge)),
         Command::Start { .. } => stub("start"),
         Command::SetTicket { .. } => stub("set-ticket"),
         Command::ClearTicket => stub("clear-ticket"),

@@ -156,6 +156,20 @@ impl Git {
             }
         }
     }
+
+    pub fn unset_global_config(&self, key: &str) -> Result<()> {
+        let output = self.try_run(&["config", "--global", "--unset", key])?;
+        match output.status.code() {
+            Some(0) | Some(5) => Ok(()),
+            _ => {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(anyhow!(
+                    "`git config --global --unset {key}` failed: {}",
+                    stderr.trim()
+                ))
+            }
+        }
+    }
 }
 
 #[cfg(test)]

@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 pub mod init;
+pub mod uninstall;
 
 pub fn stub(name: &str) -> ExitCode {
     eprintln!("tix {name}: not yet implemented");

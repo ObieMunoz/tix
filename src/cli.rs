@@ -19,6 +19,16 @@ pub enum Command {
         force: bool,
     },
 
+    /// Remove managed hook shims and unset core.hooksPath.
+    Uninstall {
+        /// Print actions without making changes.
+        #[arg(long)]
+        dry_run: bool,
+        /// Also remove the global config file and `~/.config/tix/`.
+        #[arg(long)]
+        purge: bool,
+    },
+
     /// Create a branch off the latest base and register the ticket.
     Start {
         ticket: String,

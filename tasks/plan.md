@@ -354,6 +354,35 @@ If multiple agents are available, the safe parallelization fronts are:
 
 ---
 
+#### Task 2.1a: `tix uninstall`
+
+**Description:** Symmetric inverse of `tix init`. Removes the managed hook shims, unsets `core.hooksPath` only if it points to our dir (never trample a user override), preserves `config.toml` unless `--purge`. Idempotent.
+
+**Acceptance criteria:**
+- [ ] Removes each shim file in `~/.config/tix/hooks/` that we own (the three names from `tix init`); does not touch unknown files in that dir.
+- [ ] Removes the `hooks/` dir only if empty after shim removal.
+- [ ] If `core.hooksPath` points to our managed dir: `git config --global --unset core.hooksPath`.
+- [ ] If `core.hooksPath` points elsewhere: leave it alone, print a one-line notice. Never error on this path.
+- [ ] If neither hooks nor hooksPath are present: print `nothing to do`, exit 0.
+- [ ] `--purge` also removes `~/.config/tix/config.toml` and the `~/.config/tix/` dir (when empty).
+- [ ] `--dry-run` prints the plan without making changes.
+- [ ] Final message notes that per-repo state in `<repo>/.git/tix/state.json` is left untouched (we cannot enumerate clones).
+
+**Verification:**
+- [ ] Integration test: `init` then `uninstall` — hooks gone, hooksPath unset, `config.toml` preserved.
+- [ ] Integration test: `init` then `uninstall --purge` — also `config.toml` and dir gone.
+- [ ] Integration test: `uninstall` on a clean machine — exits 0, prints `nothing to do`.
+- [ ] Integration test: `core.hooksPath` set to `/tmp/elsewhere` — `uninstall` leaves it alone, prints notice.
+- [ ] Integration test: `--dry-run` makes no filesystem or git-config changes.
+
+**Dependencies:** 1.1, 1.3, 2.1.
+
+**Files touched:** `src/commands/uninstall.rs`, `src/cli.rs` (add subcommand), `src/git/mod.rs` (add `unset_global_config`).
+
+**Estimated scope:** S.
+
+---
+
 #### Task 2.2: `tix doctor`
 
 **Description:** Run the diagnostic checks listed in SPEC §9. Each check prints `OK`/`WARN`/`FAIL` with one-line remediation.

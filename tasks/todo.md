@@ -18,6 +18,7 @@
 
 ## Phase 2: Bootstrap commands
 - [x] 2.1 `tix init` — install global hooks + scaffold config (idempotent, `--dry-run`)
+- [x] 2.1a `tix uninstall` — remove managed shims + unset hooksPath (`--purge`, `--dry-run`)
 - [ ] 2.2 `tix doctor` — diagnostic checks
 - [ ] 2.3 `tix show` — current branch/ticket/protected/base/sources
 - [ ] 2.4 `tix config get|set|list` — read/write config (e.g., `default_base`, `protected`)
