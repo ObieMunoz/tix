@@ -157,6 +157,23 @@ impl Git {
         }
     }
 
+    pub fn get_local_config(&self, key: &str) -> Result<Option<String>> {
+        let output = self.try_run(&["config", "--local", "--get", key])?;
+        match output.status.code() {
+            Some(0) => Ok(Some(
+                String::from_utf8_lossy(&output.stdout).trim().to_string(),
+            )),
+            Some(1) => Ok(None),
+            _ => {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(anyhow!(
+                    "`git config --local --get {key}` failed: {}",
+                    stderr.trim()
+                ))
+            }
+        }
+    }
+
     pub fn version_string(&self) -> Result<String> {
         self.run(&["--version"])
     }

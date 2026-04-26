@@ -1,6 +1,6 @@
 [package]
 name = "tix-git"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
 description = "Corporate git workflow assistant — ticket-prefix discipline and branch protection."

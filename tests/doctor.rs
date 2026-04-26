@@ -194,6 +194,47 @@ fn verbose_flag_adds_detail_for_failures() {
 }
 
 #[test]
+fn fail_when_local_hookspath_overrides_global() {
+    let env = Env::new();
+    env.run_init().success();
+    env.git_in_repo(&["config", "--local", "core.hooksPath", ".git/hooks"]);
+    let out = env.run_doctor(&[], env.repo.path()).failure();
+    let s = stdout(&out);
+    assert!(s.contains("local hooksPath"));
+    assert!(s.contains("FAIL"), "expected FAIL: {s}");
+    assert!(
+        s.contains("git config --local --unset core.hooksPath"),
+        "expected remediation: {s}"
+    );
+}
+
+#[test]
+fn ok_when_local_hookspath_matches_managed_dir() {
+    let env = Env::new();
+    env.run_init().success();
+    let managed = env.hooks_dir();
+    env.git_in_repo(&[
+        "config",
+        "--local",
+        "core.hooksPath",
+        managed.to_str().unwrap(),
+    ]);
+    let out = env.run_doctor(&[], env.repo.path()).success();
+    let s = stdout(&out);
+    assert!(s.contains("local hooksPath"));
+    assert!(s.contains("matches managed dir"));
+}
+
+#[test]
+fn no_local_hookspath_reports_global_applies() {
+    let env = Env::new();
+    env.run_init().success();
+    let out = env.run_doctor(&[], env.repo.path()).success();
+    let s = stdout(&out);
+    assert!(s.contains("global applies"), "expected default OK: {s}");
+}
+
+#[test]
 fn doctor_warns_about_signing_key_when_gpgsign_enabled() {
     let env = Env::new();
     env.run_init().success();

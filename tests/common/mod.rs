@@ -5,9 +5,21 @@ use std::process::Command;
 
 use tempfile::TempDir;
 
+/// Empty config file path used to neutralize the developer's real
+/// `~/.gitconfig`. Without this, an installed `tix` on the dev machine
+/// would inject its protected-branches hook into every test repo and
+/// reject `git commit -m "initial"` on `main`. /dev/null parses as an
+/// empty config on every Unix git we support.
+const NULL_GLOBAL: &str = "/dev/null";
+
+fn isolated_git(cwd: &Path) -> Command {
+    let mut cmd = Command::new("git");
+    cmd.current_dir(cwd).env("GIT_CONFIG_GLOBAL", NULL_GLOBAL);
+    cmd
+}
+
 pub fn run_git(cwd: &Path, args: &[&str]) -> String {
-    let output = Command::new("git")
-        .current_dir(cwd)
+    let output = isolated_git(cwd)
         .args(args)
         .output()
         .unwrap_or_else(|e| panic!("spawning git {args:?}: {e}"));
@@ -24,8 +36,7 @@ pub fn run_git(cwd: &Path, args: &[&str]) -> String {
 pub fn init_repo() -> TempDir {
     let dir = tempfile::tempdir().unwrap();
     let path = canonical(dir.path());
-    Command::new("git")
-        .current_dir(&path)
+    isolated_git(&path)
         .args(["init", "-b", "main"])
         .output()
         .unwrap();
@@ -37,8 +48,7 @@ pub fn init_repo() -> TempDir {
 
 pub fn init_bare() -> TempDir {
     let dir = tempfile::tempdir().unwrap();
-    Command::new("git")
-        .current_dir(dir.path())
+    isolated_git(dir.path())
         .args(["init", "--bare", "-b", "main"])
         .output()
         .unwrap();
@@ -63,4 +73,12 @@ pub fn commit(cwd: &Path, msg: &str) -> String {
 
 pub fn canonical(p: &Path) -> PathBuf {
     std::fs::canonicalize(p).unwrap()
+}
+
+/// Tests that exercise the `Git` wrapper directly should construct it
+/// via this helper so the wrapper inherits the same `GIT_CONFIG_GLOBAL`
+/// override — otherwise an installed `tix` on the developer's machine
+/// would route the test commit through real hooks.
+pub fn isolated_wrapper(path: &Path) -> tix_git::git::Git {
+    tix_git::git::Git::at(path).with_env("GIT_CONFIG_GLOBAL", NULL_GLOBAL)
 }

@@ -77,6 +77,7 @@ pub fn run(verbose: bool) -> Result<ExitCode> {
 
     let repo_root = git.repo_root().ok();
     if let Some(root) = repo_root.as_deref() {
+        checks.push(check_local_hooks_path(&git, hooks_dir.as_deref())?);
         checks.push(check_repo_config(root));
         if let Ok(git_dir) = git.git_dir() {
             checks.push(check_state_file(&git_dir));
@@ -175,6 +176,22 @@ fn check_hooks_path(git: &Git, expected: Option<&Path>) -> Result<Check> {
             "core.hooksPath",
             "not set",
             "run `tix init` to install hooks",
+        ),
+    })
+}
+
+fn check_local_hooks_path(git: &Git, expected: Option<&Path>) -> Result<Check> {
+    let value = git.get_local_config("core.hooksPath")?;
+    let expected_str = expected.map(|p| p.to_string_lossy().to_string());
+    Ok(match (value.as_deref(), expected_str.as_deref()) {
+        (None, _) => Check::ok("local hooksPath", "not set (global applies)"),
+        (Some(actual), Some(want)) if actual == want => {
+            Check::ok("local hooksPath", format!("{actual} (matches managed dir)"))
+        }
+        (Some(actual), _) => Check::fail(
+            "local hooksPath",
+            format!("local override hides our hooks: {actual}"),
+            "run `git config --local --unset core.hooksPath`",
         ),
     })
 }

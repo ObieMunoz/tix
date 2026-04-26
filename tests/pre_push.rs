@@ -101,7 +101,7 @@ fn end_to_end_push_unprotected_branch_succeeds() {
     let env = Env::new();
     env.run_tix(&["init"]).success();
     env.git(&["checkout", "-b", "feature/test"]);
-    env.git(&["commit", "--allow-empty", "-m", "POD-1 work"]);
+    env.git(&["commit", "--no-verify", "--allow-empty", "-m", "POD-1 work"]);
     let out = env.git_push("feature/test");
     assert!(
         out.status.success(),
@@ -115,7 +115,7 @@ fn end_to_end_branch_deletion_allowed_on_protected() {
     let env = Env::new();
     // First push a branch, then delete it via push.
     env.git(&["checkout", "-b", "release/old"]);
-    env.git(&["commit", "--allow-empty", "-m", "POD-1 work"]);
+    env.git(&["commit", "--no-verify", "--allow-empty", "-m", "POD-1 work"]);
     let push_out = env.git_push("release/old");
     assert!(
         push_out.status.success(),
@@ -186,7 +186,7 @@ fn naming_block_mode_blocks_push_of_nonconforming_branch() {
     )
     .unwrap();
     env.git(&["checkout", "-b", "wip"]);
-    env.git(&["commit", "--allow-empty", "-m", "POD-1 work"]);
+    env.git(&["commit", "--no-verify", "--allow-empty", "-m", "POD-1 work"]);
     let out = env.git_push("wip");
     assert!(!out.status.success(), "push of wip should be blocked");
     let stderr = String::from_utf8_lossy(&out.stderr);
@@ -220,7 +220,7 @@ fn stale_base_warning_fires_when_branch_is_far_behind() {
     }
 
     env.git(&["checkout", "-b", "feature/test"]);
-    env.git(&["commit", "--allow-empty", "-m", "POD-1 work"]);
+    env.git(&["commit", "--no-verify", "--allow-empty", "-m", "POD-1 work"]);
 
     // Lower the threshold to 0 commits behind so it always triggers
     // (we only need to verify the wiring); but threshold = 0 disables.
@@ -231,7 +231,7 @@ fn stale_base_warning_fires_when_branch_is_far_behind() {
     )
     .unwrap();
     env.git(&["add", ".tix.toml"]);
-    env.git(&["commit", "-m", "POD-1 add config"]);
+    env.git(&["commit", "--no-verify", "-m", "POD-1 add config"]);
 
     // Push some new main commits via a sibling clone. The sibling reads
     // its global config from env.git_global (an empty file) so we must
@@ -260,12 +260,13 @@ fn stale_base_warning_fires_when_branch_is_far_behind() {
     for i in 0..3 {
         sibling_git(&[
             "commit",
+            "--no-verify",
             "--allow-empty",
             "-m",
             &format!("POD-2 main commit {i}"),
         ]);
     }
-    sibling_git(&["push", "origin", "main"]);
+    sibling_git(&["push", "--no-verify", "origin", "main"]);
 
     let out = env.git_push("feature/test");
     let stderr = String::from_utf8_lossy(&out.stderr);
