@@ -58,9 +58,10 @@ fn unknown_subcommand_errors_cleanly() {
 
 #[test]
 fn every_stub_exits_nonzero_with_not_yet_implemented() {
-    // `init` is intentionally absent — it's implemented and has filesystem
-    // side effects (writes to $XDG_CONFIG_HOME, mutates `core.hooksPath`),
-    // so it must only be exercised under env-isolated tests in tests/init.rs.
+    // Implemented commands are intentionally absent from this list — they
+    // have side effects (or run real checks against the host env). Each
+    // must be exercised in its own env-isolated test file.
+    //   IMPLEMENTED: init, uninstall, doctor
     let cases: &[&[&str]] = &[
         &["start", "POD-1"],
         &["set-ticket", "POD-1"],
@@ -69,7 +70,6 @@ fn every_stub_exits_nonzero_with_not_yet_implemented() {
         &["protect", "main"],
         &["unprotect", "main"],
         &["config", "get", "branches.default_base"],
-        &["doctor"],
         &["pr"],
         &["ticket"],
         &["hook", "prepare-commit-msg"],

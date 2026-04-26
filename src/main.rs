@@ -2,7 +2,7 @@ use std::process::ExitCode;
 
 use clap::Parser;
 use tix_git::cli::{Cli, Command, ConfigAction, TicketAction};
-use tix_git::commands::{handle, init, stub, uninstall};
+use tix_git::commands::{doctor, handle, init, stub, uninstall};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -20,7 +20,13 @@ fn main() -> ExitCode {
             ConfigAction::Set { .. } => stub("config set"),
             ConfigAction::List { .. } => stub("config list"),
         },
-        Command::Doctor { .. } => stub("doctor"),
+        Command::Doctor { verbose } => match doctor::run(verbose) {
+            Ok(code) => code,
+            Err(e) => {
+                eprintln!("error: {e:#}");
+                ExitCode::from(1)
+            }
+        },
         Command::Pr => stub("pr"),
         Command::Ticket { action } => match action {
             None => stub("ticket"),

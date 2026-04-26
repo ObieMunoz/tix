@@ -157,6 +157,10 @@ impl Git {
         }
     }
 
+    pub fn version_string(&self) -> Result<String> {
+        self.run(&["--version"])
+    }
+
     pub fn unset_global_config(&self, key: &str) -> Result<()> {
         let output = self.try_run(&["config", "--global", "--unset", key])?;
         match output.status.code() {
