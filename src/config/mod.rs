@@ -170,7 +170,7 @@ impl Config {
 }
 
 fn global_config_path() -> Option<std::path::PathBuf> {
-    dirs::config_dir().map(|d| d.join("tix").join("config.toml"))
+    crate::util::paths::tix_config_dir().map(|d| d.join("config.toml"))
 }
 
 fn parse_file(path: &Path) -> Result<RawConfig> {

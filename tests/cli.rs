@@ -58,8 +58,10 @@ fn unknown_subcommand_errors_cleanly() {
 
 #[test]
 fn every_stub_exits_nonzero_with_not_yet_implemented() {
+    // `init` is intentionally absent — it's implemented and has filesystem
+    // side effects (writes to $XDG_CONFIG_HOME, mutates `core.hooksPath`),
+    // so it must only be exercised under env-isolated tests in tests/init.rs.
     let cases: &[&[&str]] = &[
-        &["init"],
         &["start", "POD-1"],
         &["set-ticket", "POD-1"],
         &["clear-ticket"],
