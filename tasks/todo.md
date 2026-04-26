@@ -46,8 +46,8 @@
 - [x] **Checkpoint F:** push helpers work
 
 ## Phase 6: Polish + ship
-- [ ] 6.1 `README.md` (install, quick-start, config reference, uninstall)
-- [ ] 6.2 Fresh-machine smoke test (`scripts/smoke.sh`)
-- [ ] 6.3 CI workflow (fmt + clippy + test + smoke; macOS + Linux matrix)
+- [x] 6.1 `README.md` (install, quick-start, config reference, uninstall)
+- [x] 6.2 Fresh-machine smoke test (`scripts/smoke.sh`)
+- [x] 6.3 CI workflow (fmt + clippy + test + smoke; macOS + Linux matrix)
 - [ ] 6.4 Tag v0.1.0
 - [ ] **Checkpoint G:** v0.1.0 shipped — `cargo install --git ...` works on fresh machine
