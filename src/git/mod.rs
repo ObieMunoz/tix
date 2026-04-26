@@ -45,7 +45,7 @@ impl Git {
             .with_context(|| format!("invoking `git {}`", args.join(" ")))
     }
 
-    fn run(&self, args: &[&str]) -> Result<String> {
+    pub fn run(&self, args: &[&str]) -> Result<String> {
         let output = self.try_run(args)?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);

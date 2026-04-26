@@ -13,7 +13,7 @@ fn main() -> ExitCode {
         Command::Init { dry_run, force } => handle(init::run(dry_run, force)),
         Command::Uninstall { dry_run, purge } => handle(uninstall::run(dry_run, purge)),
         Command::Start { .. } => stub("start"),
-        Command::SetTicket { ticket, force } => handle(set_ticket::run(&ticket, force)),
+        Command::SetTicket { ticket, force, yes } => handle(set_ticket::run(&ticket, force, yes)),
         Command::ClearTicket => handle(clear_ticket::run()),
         Command::Show => handle(show::run()),
         Command::Protect { .. } => stub("protect"),

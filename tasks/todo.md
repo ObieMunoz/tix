@@ -29,8 +29,8 @@
 - [x] 3.2 `tix clear-ticket`
 - [x] 3.3 `prepare-commit-msg` hook (prefix, idempotent, skip merges)
 - [x] 3.4 `pre-commit` hook (first-time prompt; non-TTY safe)
-- [ ] 3.5 Retroactive amend in `set-ticket` (unpushed-only; `--force` for pushed)
-- [ ] **Checkpoint D:** end-to-end commit flow works
+- [x] 3.5 Retroactive amend in `set-ticket` (unpushed-only; `--force` for pushed)
+- [x] **Checkpoint D:** end-to-end commit flow works
 
 ## Phase 4: Branch protection + lifecycle
 - [ ] 4.1 Protected branches in `pre-commit` + `pre-push` hooks

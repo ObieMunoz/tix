@@ -45,6 +45,9 @@ pub enum Command {
         /// Allow rewriting commits already on the remote.
         #[arg(long)]
         force: bool,
+        /// Skip confirmation prompts (assume yes).
+        #[arg(long, short)]
+        yes: bool,
     },
 
     /// Clear the ticket for the current branch (no-ticket mode).
