@@ -79,14 +79,8 @@ fn every_stub_exits_nonzero_with_not_yet_implemented() {
     // Implemented commands are deliberately absent from this list — they
     // are exercised under fully env-isolated tests in their own files.
     //   IMPLEMENTED: init, uninstall, doctor, show, config, set-ticket,
-    //                clear-ticket, hook (dispatcher)
-    let cases: &[&[&str]] = &[
-        &["start", "POD-1"],
-        &["protect", "main"],
-        &["unprotect", "main"],
-        &["pr"],
-        &["ticket"],
-    ];
+    //                clear-ticket, hook (dispatcher), protect, unprotect
+    let cases: &[&[&str]] = &[&["start", "POD-1"], &["pr"], &["ticket"]];
     for args in cases {
         let (mut cmd, _env) = isolated();
         let assert = cmd.args(*args).assert().failure();
@@ -119,15 +113,9 @@ fn start_accepts_flag_before_positional() {
 }
 
 #[test]
-fn protect_accepts_global_or_repo_but_not_both() {
+fn protect_global_and_repo_are_mutually_exclusive() {
     let (mut cmd, _env) = isolated();
-    cmd.args(["protect", "main", "--global"])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
-
-    let (mut cmd2, _env2) = isolated();
-    cmd2.args(["protect", "main", "--global", "--repo"])
+    cmd.args(["protect", "main", "--global", "--repo"])
         .assert()
         .failure()
         .stderr(predicates::str::contains("error:"));

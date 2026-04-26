@@ -3,7 +3,7 @@ use std::process::ExitCode;
 use clap::Parser;
 use tix_git::cli::{Cli, Command, ConfigAction, TicketAction};
 use tix_git::commands::{
-    clear_ticket, config_cmd, doctor, handle, init, set_ticket, show, stub, uninstall,
+    clear_ticket, config_cmd, doctor, handle, init, protect, set_ticket, show, stub, uninstall,
 };
 use tix_git::hooks;
 
@@ -16,8 +16,8 @@ fn main() -> ExitCode {
         Command::SetTicket { ticket, force, yes } => handle(set_ticket::run(&ticket, force, yes)),
         Command::ClearTicket => handle(clear_ticket::run()),
         Command::Show => handle(show::run()),
-        Command::Protect { .. } => stub("protect"),
-        Command::Unprotect { .. } => stub("unprotect"),
+        Command::Protect { branch, scope } => handle(protect::protect(&branch, scope)),
+        Command::Unprotect { branch, scope } => handle(protect::unprotect(&branch, scope)),
         Command::Config { action } => match action {
             ConfigAction::Get { key } => handle(config_cmd::get(&key)),
             ConfigAction::Set {

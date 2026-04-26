@@ -34,7 +34,7 @@
 
 ## Phase 4: Branch protection + lifecycle
 - [x] 4.1 Protected branches in `pre-commit` + `pre-push` hooks
-- [ ] 4.2 `tix protect` / `tix unprotect` (`--global` / `--repo`)
+- [x] 4.2 `tix protect` / `tix unprotect` (`--global` / `--repo`)
 - [ ] 4.3 `tix start <TICKET> [DESCRIPTION] [--base <BRANCH>]`
 - [ ] 4.4 Branch-naming convention check (warn / block / off)
 - [ ] **Checkpoint E:** protections + `start` work

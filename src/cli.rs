@@ -136,7 +136,7 @@ pub enum TicketAction {
     Open,
 }
 
-#[derive(clap::Args, Debug)]
+#[derive(clap::Args, Debug, Clone, Copy)]
 #[group(multiple = false)]
 pub struct ScopeFlags {
     /// Apply to the global config file.
