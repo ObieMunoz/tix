@@ -1,22 +1,24 @@
 use std::process::ExitCode;
 
+pub mod pre_commit;
 pub mod prepare_commit_msg;
 
 pub fn dispatch(name: &str, args: &[String]) -> ExitCode {
-    match name {
-        "prepare-commit-msg" => match prepare_commit_msg::run(args) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => {
-                eprintln!("error: {e:#}");
-                ExitCode::from(1)
-            }
-        },
-        // pre-commit and pre-push are stubs until Tasks 3.4 / 4.1 — they
-        // must exit 0 so commits and pushes are not blocked while their
-        // shims exist on disk.
-        "pre-commit" | "pre-push" => ExitCode::SUCCESS,
+    let result = match name {
+        "prepare-commit-msg" => prepare_commit_msg::run(args),
+        "pre-commit" => pre_commit::run(),
+        // pre-push remains a no-op stub until Task 4.1 implements it —
+        // must exit 0 so pushes are not blocked while the shim exists.
+        "pre-push" => return ExitCode::SUCCESS,
         other => {
             eprintln!("error: unknown hook `{other}`");
+            return ExitCode::from(1);
+        }
+    };
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: {e:#}");
             ExitCode::from(1)
         }
     }
