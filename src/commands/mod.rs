@@ -1,8 +1,10 @@
 use std::process::ExitCode;
 
+pub mod clear_ticket;
 pub mod config_cmd;
 pub mod doctor;
 pub mod init;
+pub mod set_ticket;
 pub mod show;
 pub mod uninstall;
 

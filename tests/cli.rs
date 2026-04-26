@@ -78,11 +78,9 @@ fn unknown_subcommand_errors_cleanly() {
 fn every_stub_exits_nonzero_with_not_yet_implemented() {
     // Implemented commands are deliberately absent from this list — they
     // are exercised under fully env-isolated tests in their own files.
-    //   IMPLEMENTED: init, uninstall, doctor, show, config
+    //   IMPLEMENTED: init, uninstall, doctor, show, config, set-ticket, clear-ticket
     let cases: &[&[&str]] = &[
         &["start", "POD-1"],
-        &["set-ticket", "POD-1"],
-        &["clear-ticket"],
         &["protect", "main"],
         &["unprotect", "main"],
         &["pr"],

@@ -25,8 +25,8 @@
 - [x] **Checkpoint C:** install + configure + introspect works on fresh env
 
 ## Phase 3: Ticket workflow
-- [ ] 3.1 `tix set-ticket <TICKET>` (no amend yet)
-- [ ] 3.2 `tix clear-ticket`
+- [x] 3.1 `tix set-ticket <TICKET>` (no amend yet)
+- [x] 3.2 `tix clear-ticket`
 - [ ] 3.3 `prepare-commit-msg` hook (prefix, idempotent, skip merges)
 - [ ] 3.4 `pre-commit` hook (first-time prompt; non-TTY safe)
 - [ ] 3.5 Retroactive amend in `set-ticket` (unpushed-only; `--force` for pushed)
