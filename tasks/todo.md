@@ -33,7 +33,7 @@
 - [x] **Checkpoint D:** end-to-end commit flow works
 
 ## Phase 4: Branch protection + lifecycle
-- [ ] 4.1 Protected branches in `pre-commit` + `pre-push` hooks
+- [x] 4.1 Protected branches in `pre-commit` + `pre-push` hooks
 - [ ] 4.2 `tix protect` / `tix unprotect` (`--global` / `--repo`)
 - [ ] 4.3 `tix start <TICKET> [DESCRIPTION] [--base <BRANCH>]`
 - [ ] 4.4 Branch-naming convention check (warn / block / off)

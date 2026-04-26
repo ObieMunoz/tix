@@ -174,6 +174,9 @@ fn applies_to_template_with_leading_comments() {
 #[test]
 fn end_to_end_git_commit_prefixes_subject_via_real_hook() {
     let env = Env::new();
+    // `main` is protected by default — switch to a feature branch so
+    // pre-commit doesn't refuse the test commit.
+    env.git(&["checkout", "-b", "feature/test"]);
     Command::cargo_bin("tix")
         .unwrap()
         .current_dir(env.repo.path())

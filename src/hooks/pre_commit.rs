@@ -4,10 +4,10 @@ use anyhow::{Context, Result, bail};
 use chrono::Utc;
 use regex::Regex;
 
-use crate::config::Config;
+use crate::config::{Config, Source};
 use crate::git::Git;
 use crate::state::{BranchEntry, State};
-use crate::util::prompt;
+use crate::util::{glob, prompt};
 
 const MAX_RETRIES: usize = 3;
 
@@ -19,15 +19,39 @@ pub fn run() -> Result<()> {
     let Ok(branch) = git.current_branch() else {
         return Ok(());
     };
+
+    let cfg = Config::load(Some(&repo_root))?;
+
+    if let Some(matched) = first_matching_pattern(&branch, &cfg.branches.protected) {
+        let source = cfg
+            .source("branches.protected")
+            .map(format_source)
+            .unwrap_or("?");
+        bail!(
+            "branch '{branch}' is protected (matches '{matched}', from {source}); pass --no-verify to bypass"
+        );
+    }
+
     let git_dir = git.git_dir()?;
     let state = State::load(&git_dir)?;
     if state.get_branch(&branch).is_some() {
         return Ok(());
     }
 
-    let cfg = Config::load(Some(&repo_root))?;
     let mut prompter = RealPrompter;
     prompt_and_persist(&git_dir, &branch, &cfg, &mut prompter)
+}
+
+pub fn first_matching_pattern(branch: &str, patterns: &[String]) -> Option<String> {
+    patterns.iter().find(|p| glob::matches(p, branch)).cloned()
+}
+
+pub fn format_source(s: Source) -> &'static str {
+    match s {
+        Source::Default => "default",
+        Source::Global => "global",
+        Source::Repo => "repo",
+    }
 }
 
 pub trait Prompter {

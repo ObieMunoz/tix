@@ -26,6 +26,10 @@ impl Env {
         env.git(&["config", "user.name", "Test"]);
         env.git(&["config", "commit.gpgsign", "false"]);
         env.git(&["commit", "--allow-empty", "-m", "initial"]);
+        // `main` is in the default protected list — switch to an
+        // unprotected branch for prompt-flow tests. Protection-specific
+        // tests can `git.git(&["checkout", "main"])` to opt back in.
+        env.git(&["checkout", "-b", "wip"]);
         env
     }
 
@@ -73,15 +77,52 @@ impl Env {
 #[test]
 fn no_op_when_branch_already_has_state_entry() {
     let env = Env::new();
-    env.write_state("main", Some("POD-1"));
+    env.write_state("wip", Some("POD-1"));
     env.run_hook(env.repo.path()).success();
 }
 
 #[test]
 fn no_op_when_branch_is_in_no_ticket_mode() {
     let env = Env::new();
-    env.write_state("main", None);
+    env.write_state("wip", None);
     env.run_hook(env.repo.path()).success();
+}
+
+#[test]
+fn blocks_commit_on_protected_branch() {
+    let env = Env::new();
+    env.git(&["checkout", "main"]);
+    let assert = env.run_hook(env.repo.path()).failure();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(stderr.contains("protected"));
+    assert!(stderr.contains("main"));
+    assert!(stderr.contains("--no-verify"));
+}
+
+#[test]
+fn blocks_commit_on_glob_protected_branch() {
+    let env = Env::new();
+    env.git(&["checkout", "-b", "release/1.0"]);
+    let assert = env.run_hook(env.repo.path()).failure();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(stderr.contains("release/*"), "stderr: {stderr}");
+}
+
+#[test]
+fn allows_commit_on_branch_outside_glob_segment() {
+    let env = Env::new();
+    env.write_state("release/1.0/rc1", Some("POD-1"));
+    env.git(&["checkout", "-b", "release/1.0/rc1"]);
+    env.run_hook(env.repo.path()).success();
+}
+
+#[test]
+fn protection_source_is_default_when_user_has_not_overridden() {
+    let env = Env::new();
+    env.git(&["checkout", "main"]);
+    let assert = env.run_hook(env.repo.path()).failure();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(stderr.contains("from default"), "stderr: {stderr}");
 }
 
 #[test]
