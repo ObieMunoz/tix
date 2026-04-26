@@ -7,6 +7,7 @@ pub mod init;
 pub mod protect;
 pub mod set_ticket;
 pub mod show;
+pub mod start;
 pub mod uninstall;
 
 pub fn stub(name: &str) -> ExitCode {

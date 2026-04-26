@@ -79,8 +79,8 @@ fn every_stub_exits_nonzero_with_not_yet_implemented() {
     // Implemented commands are deliberately absent from this list — they
     // are exercised under fully env-isolated tests in their own files.
     //   IMPLEMENTED: init, uninstall, doctor, show, config, set-ticket,
-    //                clear-ticket, hook (dispatcher), protect, unprotect
-    let cases: &[&[&str]] = &[&["start", "POD-1"], &["pr"], &["ticket"]];
+    //                clear-ticket, hook (dispatcher), protect, unprotect, start
+    let cases: &[&[&str]] = &[&["pr"], &["ticket"]];
     for args in cases {
         let (mut cmd, _env) = isolated();
         let assert = cmd.args(*args).assert().failure();
@@ -93,23 +93,10 @@ fn every_stub_exits_nonzero_with_not_yet_implemented() {
 }
 
 #[test]
-fn start_accepts_ticket_description_and_base() {
+fn start_clap_accepts_ticket_description_and_base() {
+    // Clap parse-only check; full start behavior tested in tests/start.rs.
     let (mut cmd, _env) = isolated();
-    let assert = cmd
-        .args(["start", "POD-1234", "fix-thing", "--base", "develop"])
-        .assert()
-        .failure();
-    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
-    assert!(stderr.contains("not yet implemented"), "stderr: {stderr}");
-}
-
-#[test]
-fn start_accepts_flag_before_positional() {
-    let (mut cmd, _env) = isolated();
-    cmd.args(["start", "POD-1234", "--base", "develop", "fix-thing"])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+    cmd.args(["start", "--help"]).assert().success();
 }
 
 #[test]
