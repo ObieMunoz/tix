@@ -13,8 +13,8 @@
 - [x] 1.2 State system (`.git/tix/state.json`, atomic writes, versioned)
 - [x] 1.3 Git subprocess wrapper (`repo_root`, `current_branch`, `fetch`, `rev_list_count`, etc.)
 - [x] 1.4 Utilities (ticket validate/extract, slugify, glob, prompt)
-- [ ] 1.5 CLI scaffold (clap, all 11 subcommands as stubs)
-- [ ] **Checkpoint B:** all unit + integration tests pass; clippy/fmt clean
+- [x] 1.5 CLI scaffold (clap, all 12 subcommands as stubs)
+- [x] **Checkpoint B:** all unit + integration tests pass; clippy/fmt clean
 
 ## Phase 2: Bootstrap commands
 - [ ] 2.1 `tix init` — install global hooks + scaffold config (idempotent, `--dry-run`)
