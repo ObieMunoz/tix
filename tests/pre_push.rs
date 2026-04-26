@@ -233,33 +233,39 @@ fn stale_base_warning_fires_when_branch_is_far_behind() {
     env.git(&["add", ".tix.toml"]);
     env.git(&["commit", "-m", "POD-1 add config"]);
 
-    // Push some new main commits via a sibling clone.
+    // Push some new main commits via a sibling clone. The sibling reads
+    // its global config from env.git_global (an empty file) so we must
+    // configure a local identity — otherwise git commit refuses, the
+    // sibling pushes nothing, and origin/main stays put → no stale base.
+    // (macOS happened to fall back to a system identity; Ubuntu doesn't.)
     let sibling = tempfile::tempdir().unwrap();
-    ProcCommand::new("git")
-        .current_dir(sibling.path())
-        .env("GIT_CONFIG_GLOBAL", env.git_global.path())
-        .args(["clone", env.bare.path().to_str().unwrap(), "."])
-        .output()
-        .unwrap();
-    for i in 0..3 {
-        ProcCommand::new("git")
+    let sibling_git = |args: &[&str]| {
+        let out = ProcCommand::new("git")
             .current_dir(sibling.path())
             .env("GIT_CONFIG_GLOBAL", env.git_global.path())
-            .args([
-                "commit",
-                "--allow-empty",
-                "-m",
-                &format!("POD-2 main commit {i}"),
-            ])
+            .args(args)
             .output()
             .unwrap();
+        if !out.status.success() {
+            panic!(
+                "sibling git {args:?} failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    };
+    sibling_git(&["clone", env.bare.path().to_str().unwrap(), "."]);
+    sibling_git(&["config", "user.email", "sibling@example.com"]);
+    sibling_git(&["config", "user.name", "Sibling"]);
+    sibling_git(&["config", "commit.gpgsign", "false"]);
+    for i in 0..3 {
+        sibling_git(&[
+            "commit",
+            "--allow-empty",
+            "-m",
+            &format!("POD-2 main commit {i}"),
+        ]);
     }
-    ProcCommand::new("git")
-        .current_dir(sibling.path())
-        .env("GIT_CONFIG_GLOBAL", env.git_global.path())
-        .args(["push", "origin", "main"])
-        .output()
-        .unwrap();
+    sibling_git(&["push", "origin", "main"]);
 
     let out = env.git_push("feature/test");
     let stderr = String::from_utf8_lossy(&out.stderr);
