@@ -1,0 +1,11 @@
+# Repo-level overrides for the tix source itself.
+#
+# `tix` is the tool — and the maintainer ships releases by committing
+# to `main` of this very repo. The default protected list and naming
+# pattern (which exist for everyone else's projects) would force
+# `--no-verify` on every release commit and tag here. Override both
+# off for this repo only; global defaults still apply elsewhere.
+
+[branches]
+protected = []
+naming_enforcement = "off"
