@@ -40,10 +40,10 @@
 - [x] **Checkpoint E:** protections + `start` work
 
 ## Phase 5: Push-time helpers
-- [ ] 5.1 Stale-base warning in `pre-push` (best-effort, never blocks)
-- [ ] 5.2 `tix pr` — detect provider, shell to `gh`/`glab` or print URL
-- [ ] 5.3 `tix ticket [open]` — print or open ticket URL
-- [ ] **Checkpoint F:** push helpers work
+- [x] 5.1 Stale-base warning in `pre-push` (best-effort, never blocks)
+- [x] 5.2 `tix pr` — detect provider, shell to `gh`/`glab` or print URL
+- [x] 5.3 `tix ticket [open]` — print or open ticket URL
+- [x] **Checkpoint F:** push helpers work
 
 ## Phase 6: Polish + ship
 - [ ] 6.1 `README.md` (install, quick-start, config reference, uninstall)

@@ -194,6 +194,82 @@ fn naming_block_mode_blocks_push_of_nonconforming_branch() {
 }
 
 #[test]
+fn stale_base_warning_fires_when_branch_is_far_behind() {
+    let env = Env::new();
+    env.run_tix(&["init"]).success();
+    // push initial main to bare
+    let push_main = env.git_push("main");
+    // The push of main is blocked by protection; instead set up via direct push.
+    if !push_main.status.success() {
+        // Push using --no-verify to populate the bare repo
+        let tix_path = assert_cmd::cargo::cargo_bin("tix");
+        let tix_dir = tix_path.parent().unwrap();
+        let path = format!(
+            "{}:{}",
+            tix_dir.display(),
+            std::env::var("PATH").unwrap_or_default()
+        );
+        let _ = ProcCommand::new("git")
+            .current_dir(env.repo.path())
+            .env("HOME", env.home.path())
+            .env("XDG_CONFIG_HOME", env.xdg.path())
+            .env("GIT_CONFIG_GLOBAL", env.git_global.path())
+            .env("PATH", &path)
+            .args(["push", "--no-verify", "origin", "main"])
+            .output();
+    }
+
+    env.git(&["checkout", "-b", "feature/test"]);
+    env.git(&["commit", "--allow-empty", "-m", "POD-1 work"]);
+
+    // Lower the threshold to 0 commits behind so it always triggers
+    // (we only need to verify the wiring); but threshold = 0 disables.
+    // Set threshold to 1, then add 2 commits to main on the remote.
+    std::fs::write(
+        env.repo.path().join(".tix.toml"),
+        "[push]\nstale_warn_threshold = 1\n",
+    )
+    .unwrap();
+    env.git(&["add", ".tix.toml"]);
+    env.git(&["commit", "-m", "POD-1 add config"]);
+
+    // Push some new main commits via a sibling clone.
+    let sibling = tempfile::tempdir().unwrap();
+    ProcCommand::new("git")
+        .current_dir(sibling.path())
+        .env("GIT_CONFIG_GLOBAL", env.git_global.path())
+        .args(["clone", env.bare.path().to_str().unwrap(), "."])
+        .output()
+        .unwrap();
+    for i in 0..3 {
+        ProcCommand::new("git")
+            .current_dir(sibling.path())
+            .env("GIT_CONFIG_GLOBAL", env.git_global.path())
+            .args([
+                "commit",
+                "--allow-empty",
+                "-m",
+                &format!("POD-2 main commit {i}"),
+            ])
+            .output()
+            .unwrap();
+    }
+    ProcCommand::new("git")
+        .current_dir(sibling.path())
+        .env("GIT_CONFIG_GLOBAL", env.git_global.path())
+        .args(["push", "origin", "main"])
+        .output()
+        .unwrap();
+
+    let out = env.git_push("feature/test");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("commits behind") || stderr.contains("rebase"),
+        "expected stale-base warning: {stderr}"
+    );
+}
+
+#[test]
 fn nonexistent_repo_root_does_not_crash_pre_push_hook() {
     // Run pre-push hook outside any git repo (no remote refs/branches),
     // confirm it exits 0 cleanly.

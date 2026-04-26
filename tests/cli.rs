@@ -75,24 +75,6 @@ fn unknown_subcommand_errors_cleanly() {
 }
 
 #[test]
-fn every_stub_exits_nonzero_with_not_yet_implemented() {
-    // Implemented commands are deliberately absent from this list — they
-    // are exercised under fully env-isolated tests in their own files.
-    //   IMPLEMENTED: init, uninstall, doctor, show, config, set-ticket,
-    //                clear-ticket, hook (dispatcher), protect, unprotect, start
-    let cases: &[&[&str]] = &[&["pr"], &["ticket"]];
-    for args in cases {
-        let (mut cmd, _env) = isolated();
-        let assert = cmd.args(*args).assert().failure();
-        let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
-        assert!(
-            stderr.contains("not yet implemented"),
-            "args {args:?}: expected stub message, got: {stderr}"
-        );
-    }
-}
-
-#[test]
 fn start_clap_accepts_ticket_description_and_base() {
     // Clap parse-only check; full start behavior tested in tests/start.rs.
     let (mut cmd, _env) = isolated();
@@ -109,12 +91,9 @@ fn protect_global_and_repo_are_mutually_exclusive() {
 }
 
 #[test]
-fn ticket_open_subcommand_parses() {
+fn ticket_open_subcommand_clap_parses() {
     let (mut cmd, _env) = isolated();
-    cmd.args(["ticket", "open"])
-        .assert()
-        .failure()
-        .stderr(predicates::str::contains("not yet implemented"));
+    cmd.args(["ticket", "--help"]).assert().success();
 }
 
 #[test]

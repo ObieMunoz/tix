@@ -55,7 +55,37 @@ pub fn run(_args: &[String]) -> Result<()> {
         bail!("{}", blocking.join("\n"));
     }
 
+    warn_if_stale_base(&git, &cfg, &pushed_refs);
+
     Ok(())
+}
+
+fn warn_if_stale_base(git: &Git, cfg: &Config, pushed_refs: &[String]) {
+    if cfg.push.stale_warn_threshold == 0 || pushed_refs.is_empty() {
+        return;
+    }
+    let base = &cfg.branches.default_base;
+    if git.fetch("origin", base).is_err() {
+        return;
+    }
+    let remote_ref = format!("origin/{base}");
+    for branch in pushed_refs {
+        if branch == base {
+            continue;
+        }
+        let range = format!("{branch}..{remote_ref}");
+        let Ok(out) = git.run(&["rev-list", "--count", &range]) else {
+            continue;
+        };
+        let Ok(count) = out.parse::<u32>() else {
+            continue;
+        };
+        if count > cfg.push.stale_warn_threshold {
+            eprintln!(
+                "warning: '{branch}' is {count} commits behind {remote_ref}; consider `git rebase {remote_ref}`"
+            );
+        }
+    }
 }
 
 fn pushed_branches<R: Read>(reader: R) -> Result<Vec<String>> {

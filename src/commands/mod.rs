@@ -4,16 +4,13 @@ pub mod clear_ticket;
 pub mod config_cmd;
 pub mod doctor;
 pub mod init;
+pub mod pr;
 pub mod protect;
 pub mod set_ticket;
 pub mod show;
 pub mod start;
+pub mod ticket;
 pub mod uninstall;
-
-pub fn stub(name: &str) -> ExitCode {
-    eprintln!("tix {name}: not yet implemented");
-    ExitCode::from(1)
-}
 
 pub fn handle(result: anyhow::Result<()>) -> ExitCode {
     match result {
