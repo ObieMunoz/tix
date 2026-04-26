@@ -36,8 +36,8 @@
 - [x] 4.1 Protected branches in `pre-commit` + `pre-push` hooks
 - [x] 4.2 `tix protect` / `tix unprotect` (`--global` / `--repo`)
 - [x] 4.3 `tix start <TICKET> [DESCRIPTION] [--base <BRANCH>]`
-- [ ] 4.4 Branch-naming convention check (warn / block / off)
-- [ ] **Checkpoint E:** protections + `start` work
+- [x] 4.4 Branch-naming convention check (warn / block / off)
+- [x] **Checkpoint E:** protections + `start` work
 
 ## Phase 5: Push-time helpers
 - [ ] 5.1 Stale-base warning in `pre-push` (best-effort, never blocks)

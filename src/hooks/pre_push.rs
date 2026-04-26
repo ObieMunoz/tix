@@ -4,7 +4,9 @@ use anyhow::{Result, bail};
 
 use crate::config::Config;
 use crate::git::Git;
-use crate::hooks::pre_commit::{first_matching_pattern, format_source};
+use crate::hooks::pre_commit::{
+    NamingResult, check_branch_naming, first_matching_pattern, format_source,
+};
 
 pub fn run(_args: &[String]) -> Result<()> {
     let git = Git::current();
@@ -12,33 +14,51 @@ pub fn run(_args: &[String]) -> Result<()> {
         return Ok(());
     };
     let cfg = Config::load(Some(&repo_root))?;
-    if cfg.branches.protected.is_empty() {
-        return Ok(());
-    }
 
     let mut buf = String::new();
     io::stdin().read_to_string(&mut buf)?;
-    let violations = check_lines(buf.as_bytes(), &cfg.branches.protected)?;
-    if violations.is_empty() {
-        return Ok(());
+    let pushed_refs = pushed_branches(buf.as_bytes())?;
+
+    if !cfg.branches.protected.is_empty() {
+        let violations: Vec<(String, String)> = pushed_refs
+            .iter()
+            .filter_map(|b| {
+                first_matching_pattern(b, &cfg.branches.protected).map(|p| (b.clone(), p))
+            })
+            .collect();
+        if !violations.is_empty() {
+            let source = cfg
+                .source("branches.protected")
+                .map(format_source)
+                .unwrap_or("?");
+            let mut msg = format!(
+                "push blocked: {} protected ref(s) (from {source}):\n",
+                violations.len()
+            );
+            for (b, p) in &violations {
+                msg.push_str(&format!("  - {b} matches '{p}'\n"));
+            }
+            msg.push_str("pass --no-verify to bypass.");
+            bail!(msg);
+        }
     }
 
-    let source = cfg
-        .source("branches.protected")
-        .map(format_source)
-        .unwrap_or("?");
-    let mut msg = format!(
-        "push blocked: {} protected ref(s) (from {source}):\n",
-        violations.len()
-    );
-    for (b, p) in &violations {
-        msg.push_str(&format!("  - {b} matches '{p}'\n"));
+    let mut blocking = Vec::new();
+    for b in &pushed_refs {
+        match check_branch_naming(b, &cfg)? {
+            NamingResult::Ok => {}
+            NamingResult::Warn(m) => eprintln!("warning: {m}"),
+            NamingResult::Block(m) => blocking.push(m),
+        }
     }
-    msg.push_str("pass --no-verify to bypass.");
-    bail!(msg);
+    if !blocking.is_empty() {
+        bail!("{}", blocking.join("\n"));
+    }
+
+    Ok(())
 }
 
-pub fn check_lines<R: Read>(reader: R, patterns: &[String]) -> Result<Vec<(String, String)>> {
+fn pushed_branches<R: Read>(reader: R) -> Result<Vec<String>> {
     let mut buf = io::BufReader::new(reader);
     let mut line = String::new();
     let mut out = Vec::new();
@@ -47,27 +67,27 @@ pub fn check_lines<R: Read>(reader: R, patterns: &[String]) -> Result<Vec<(Strin
         if buf.read_line(&mut line)? == 0 {
             break;
         }
-        if let Some(violation) = check_one_line(&line, patterns) {
-            out.push(violation);
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() < 4 {
+            continue;
         }
+        let local_ref = parts[0];
+        let local_sha = parts[1];
+        if local_sha.chars().all(|c| c == '0') {
+            continue;
+        }
+        let local_branch = local_ref.strip_prefix("refs/heads/").unwrap_or(local_ref);
+        out.push(local_branch.to_string());
     }
     Ok(out)
 }
 
-fn check_one_line(line: &str, patterns: &[String]) -> Option<(String, String)> {
-    let parts: Vec<&str> = line.split_whitespace().collect();
-    if parts.len() < 4 {
-        return None;
-    }
-    let local_ref = parts[0];
-    let local_sha = parts[1];
-
-    if local_sha.chars().all(|c| c == '0') {
-        return None;
-    }
-
-    let local_branch = local_ref.strip_prefix("refs/heads/").unwrap_or(local_ref);
-    first_matching_pattern(local_branch, patterns).map(|p| (local_branch.to_string(), p))
+pub fn check_lines<R: Read>(reader: R, patterns: &[String]) -> Result<Vec<(String, String)>> {
+    let branches = pushed_branches(reader)?;
+    Ok(branches
+        .into_iter()
+        .filter_map(|b| first_matching_pattern(&b, patterns).map(|p| (b, p)))
+        .collect())
 }
 
 #[cfg(test)]

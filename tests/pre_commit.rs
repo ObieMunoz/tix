@@ -126,6 +126,57 @@ fn protection_source_is_default_when_user_has_not_overridden() {
 }
 
 #[test]
+fn naming_warn_mode_warns_but_lets_commit_proceed() {
+    let env = Env::new();
+    env.write_state("wip", Some("POD-1"));
+    let assert = env.run_hook(env.repo.path()).success();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(
+        stderr.contains("warning") && stderr.contains("naming pattern"),
+        "stderr: {stderr}"
+    );
+}
+
+#[test]
+fn naming_block_mode_refuses_a_nonconforming_branch() {
+    let env = Env::new();
+    env.write_state("wip", Some("POD-1"));
+    std::fs::write(
+        env.repo.path().join(".tix.toml"),
+        "[branches]\nnaming_enforcement = \"block\"\n",
+    )
+    .unwrap();
+    let assert = env.run_hook(env.repo.path()).failure();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(stderr.contains("naming pattern"));
+    assert!(stderr.contains("git branch -m"));
+}
+
+#[test]
+fn naming_off_mode_skips_check() {
+    let env = Env::new();
+    env.write_state("wip", Some("POD-1"));
+    std::fs::write(
+        env.repo.path().join(".tix.toml"),
+        "[branches]\nnaming_enforcement = \"off\"\n",
+    )
+    .unwrap();
+    let assert = env.run_hook(env.repo.path()).success();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(!stderr.contains("naming pattern"), "stderr: {stderr}");
+}
+
+#[test]
+fn naming_conforming_branch_emits_no_warning() {
+    let env = Env::new();
+    env.git(&["checkout", "-b", "feature/POD-1"]);
+    env.write_state("feature/POD-1", Some("POD-1"));
+    let assert = env.run_hook(env.repo.path()).success();
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(!stderr.contains("naming pattern"), "stderr: {stderr}");
+}
+
+#[test]
 fn fails_clean_when_no_state_and_stdin_is_not_a_tty() {
     let env = Env::new();
     let assert = env.run_hook(env.repo.path()).failure();

@@ -32,6 +32,12 @@ pub fn run() -> Result<()> {
         );
     }
 
+    match check_branch_naming(&branch, &cfg)? {
+        NamingResult::Ok => {}
+        NamingResult::Warn(msg) => eprintln!("warning: {msg}"),
+        NamingResult::Block(msg) => bail!("{msg}"),
+    }
+
     let git_dir = git.git_dir()?;
     let state = State::load(&git_dir)?;
     if state.get_branch(&branch).is_some() {
@@ -44,6 +50,37 @@ pub fn run() -> Result<()> {
 
 pub fn first_matching_pattern(branch: &str, patterns: &[String]) -> Option<String> {
     patterns.iter().find(|p| glob::matches(p, branch)).cloned()
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum NamingResult {
+    Ok,
+    Warn(String),
+    Block(String),
+}
+
+pub fn check_branch_naming(branch: &str, cfg: &Config) -> Result<NamingResult> {
+    let mode = cfg.branches.naming_enforcement.as_str();
+    if mode == "off" {
+        return Ok(NamingResult::Ok);
+    }
+    let re = Regex::new(&cfg.branches.naming_pattern).with_context(|| {
+        format!(
+            "invalid branches.naming_pattern: {}",
+            cfg.branches.naming_pattern
+        )
+    })?;
+    if re.is_match(branch) {
+        return Ok(NamingResult::Ok);
+    }
+    let msg = format!(
+        "branch '{branch}' does not match naming pattern '{}'; rename via `git branch -m <new-name>`",
+        cfg.branches.naming_pattern
+    );
+    Ok(match mode {
+        "block" => NamingResult::Block(msg),
+        _ => NamingResult::Warn(msg),
+    })
 }
 
 pub fn format_source(s: Source) -> &'static str {

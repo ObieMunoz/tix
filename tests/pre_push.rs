@@ -177,6 +177,23 @@ fn end_to_end_push_no_verify_bypasses_pre_push() {
 }
 
 #[test]
+fn naming_block_mode_blocks_push_of_nonconforming_branch() {
+    let env = Env::new();
+    env.run_tix(&["init"]).success();
+    std::fs::write(
+        env.repo.path().join(".tix.toml"),
+        "[branches]\nnaming_enforcement = \"block\"\n",
+    )
+    .unwrap();
+    env.git(&["checkout", "-b", "wip"]);
+    env.git(&["commit", "--allow-empty", "-m", "POD-1 work"]);
+    let out = env.git_push("wip");
+    assert!(!out.status.success(), "push of wip should be blocked");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("naming pattern"), "stderr: {stderr}");
+}
+
+#[test]
 fn nonexistent_repo_root_does_not_crash_pre_push_hook() {
     // Run pre-push hook outside any git repo (no remote refs/branches),
     // confirm it exits 0 cleanly.
