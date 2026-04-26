@@ -49,5 +49,5 @@
 - [x] 6.1 `README.md` (install, quick-start, config reference, uninstall)
 - [x] 6.2 Fresh-machine smoke test (`scripts/smoke.sh`)
 - [x] 6.3 CI workflow (fmt + clippy + test + smoke; macOS + Linux matrix)
-- [x] 6.4 Tag v0.1.0 (local; not yet pushed to origin)
-- [ ] **Checkpoint G:** v0.1.0 shipped — `cargo install --git ...` works on fresh machine
+- [x] 6.4 Tag v0.1.0 (pushed to origin; GitHub release published)
+- [x] **Checkpoint G:** v0.1.0 shipped — `cargo install --git ...` works on fresh machine
