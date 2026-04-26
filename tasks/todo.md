@@ -3,13 +3,13 @@
 > Concise checklist. Full task detail (acceptance, verification, dependencies) lives in `plan.md`. Check items off as completed.
 
 ## Phase 0: Bootstrap
-- [ ] 0.1 Rename `corporate-git-assist/` → `tix/`; init repo, add `origin = github.com/ObieMunoz/tix`, fetch + soft reset to bring in remote LICENSE + .gitignore
-- [ ] 0.2 `cargo init` skeleton: `Cargo.toml` (crate `tix-git`, binary `tix`, edition 2024, deps), `src/main.rs` stub
-- [ ] 0.3 First commit (SPEC + tasks + Cargo skeleton + Cargo.lock); push to `origin/main`
-- [ ] **Checkpoint A:** clean build, our commit on `main` ahead of remote initial commit
+- [x] 0.1 Rename `corporate-git-assist/` → `tix/`; init repo, add `origin = github.com/ObieMunoz/tix`, fetch + hard reset to bring in remote LICENSE + .gitignore
+- [x] 0.2 `cargo init` skeleton: `Cargo.toml` (crate `tix-git`, binary `tix`, edition 2024, deps), `src/main.rs` stub
+- [x] 0.3 First commit (SPEC + tasks + Cargo skeleton + Cargo.lock); push to `origin/main` — commit `20327e2`
+- [x] **Checkpoint A:** clean build, our commit on `main` ahead of remote initial commit
 
 ## Phase 1: Foundation
-- [ ] 1.1 Config system (defaults + global + repo merge, source tracking)
+- [x] 1.1 Config system (defaults + global + repo merge, source tracking)
 - [ ] 1.2 State system (`.git/tix/state.json`, atomic writes, versioned)
 - [ ] 1.3 Git subprocess wrapper (`repo_root`, `current_branch`, `fetch`, `rev_list_count`, etc.)
 - [ ] 1.4 Utilities (ticket validate/extract, slugify, glob, prompt)
