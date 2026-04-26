@@ -78,14 +78,14 @@ fn unknown_subcommand_errors_cleanly() {
 fn every_stub_exits_nonzero_with_not_yet_implemented() {
     // Implemented commands are deliberately absent from this list — they
     // are exercised under fully env-isolated tests in their own files.
-    //   IMPLEMENTED: init, uninstall, doctor, show, config, set-ticket, clear-ticket
+    //   IMPLEMENTED: init, uninstall, doctor, show, config, set-ticket,
+    //                clear-ticket, hook (dispatcher)
     let cases: &[&[&str]] = &[
         &["start", "POD-1"],
         &["protect", "main"],
         &["unprotect", "main"],
         &["pr"],
         &["ticket"],
-        &["hook", "prepare-commit-msg"],
     ];
     for args in cases {
         let (mut cmd, _env) = isolated();
@@ -143,16 +143,9 @@ fn ticket_open_subcommand_parses() {
 }
 
 #[test]
-fn hook_accepts_trailing_args_including_dashes() {
+fn hook_clap_accepts_trailing_args_including_dashes() {
+    // Clap-only parse check — hook trailing-arg semantics are tested
+    // for real (with state set up etc.) in tests/prepare_commit_msg.rs.
     let (mut cmd, _env) = isolated();
-    cmd.args([
-        "hook",
-        "prepare-commit-msg",
-        "/tmp/COMMIT_EDITMSG",
-        "message",
-        "--some-arg",
-    ])
-    .assert()
-    .failure()
-    .stderr(predicates::str::contains("not yet implemented"));
+    cmd.args(["hook", "--help"]).assert().success();
 }

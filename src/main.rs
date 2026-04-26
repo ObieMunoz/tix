@@ -5,6 +5,7 @@ use tix_git::cli::{Cli, Command, ConfigAction, TicketAction};
 use tix_git::commands::{
     clear_ticket, config_cmd, doctor, handle, init, set_ticket, show, stub, uninstall,
 };
+use tix_git::hooks;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -49,6 +50,6 @@ fn main() -> ExitCode {
             None => stub("ticket"),
             Some(TicketAction::Open) => stub("ticket open"),
         },
-        Command::Hook { .. } => stub("hook"),
+        Command::Hook { name, args } => hooks::dispatch(&name, &args),
     }
 }
